@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	_ "ordersystem/docs"
+
 	// OpenApi
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -24,7 +25,6 @@ var embeddedFrontend embed.FS
 
 // @title				Order System
 // @description			This system enables drink orders and should not be used for the forbidden Hungover Games.
-// @contact.name		Your Name
 func main() {
 	db := repository.NewDatabaseHandler()
 	r := chi.NewRouter()

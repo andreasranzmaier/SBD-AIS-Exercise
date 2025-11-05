@@ -1,1 +1,49 @@
-# todo
+# docker-compose.yml
+version: "3.9"
+
+services:
+  # Postgres Database Service
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./debug.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Persist database data
+    # get the env vars from debug.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker -d order"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ordersys-net
+
+  # Order System Service
+  ordersystem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy # Ensure Postgres is healthy before starting
+    restart: unless-stopped
+    env_file:
+      - ./debug.env
+    ports:
+      - "3000:3000"
+    command: ["/app/ordersystem"]
+    networks:
+      - ordersys-net
+
+# Define networks and volumes
+networks:
+  ordersys-net:
+
+volumes:
+  pgdata:

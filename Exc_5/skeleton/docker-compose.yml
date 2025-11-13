@@ -1,3 +1,5 @@
+version: "3.9"
+
 networks:
   web:
     name: web
@@ -9,47 +11,78 @@ volumes:
 
 services:
   traefik:
-    image: "traefik:v3.5.2"
-    # todo add traefik config
-    # todo only expose network web
+    image: traefik:v3.5.2
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true            # expose dashboard on :8080
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=web # resolve backends via this network
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"        # HTTP
+      - "8080:8080"    # Dashboard: http://localhost:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - web
+    restart: unless-stopped
 
+  order-postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=order
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+    networks:
+      - intercom
+    volumes:
+      - order_pg_vol:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker -d order -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
 
   orderservice:
-    container_name: orderservice
     build: .
-    command: [ "/app/ordersystem" ]
-    # todo add traefik labels
+    command: ["/app/ordersystem"]
     environment:
       - POSTGRES_DB=order
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
       - POSTGRES_TCP_PORT=5432
       - DB_HOST=order-postgres
+    depends_on:
+      order-postgres:
+        condition: service_healthy
     networks:
       - intercom
       - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.orderservice.rule=Host(`orders.localhost`)
+      - traefik.http.routers.orderservice.entrypoints=web
+      - traefik.http.services.orderservice.loadbalancer.server.port=3000
+    restart: unless-stopped
 
   sws:
     image: joseluisq/static-web-server:latest
-    # todo add frontend folder as volume
-    # todo setup environment variables to expose port 80 and serve the frontend folder
-    # todo add traefik labels
+    volumes:
+      - ./frontend:/public:ro   # ensure your built assets/index live here
+    environment:
+      - SERVER_PORT=80
+      - SERVER_ROOT=/public
+      # Optional: uncomment for SPA fallback if your frontend is a SPA and deep links 404
+      # - SPA=true
     networks:
       - web
-
-  order-postgres:
-    image: postgres:latest
-    restart: always
-    networks:
-      - intercom
-    volumes:
-      - order_pg_vol:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=order
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - POSTGRES_TCP_PORT=5432
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.frontend.rule=Host(`localhost`)
+      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+    restart: unless-stopped

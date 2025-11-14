@@ -43,6 +43,7 @@ func main() {
 	r.Get("/api/order/totalled", rest.GetOrdersTotal(db))
 	r.Post("/api/order", rest.PostOrder(db))
 	// OpenAPI Routes
+	// OpenAPI (Swagger UI) under /openapi
 	r.Get("/openapi/*", httpSwagger.WrapHandler)
 
 	slog.Info("⚡⚡⚡ Order System is up and running ⚡⚡⚡")

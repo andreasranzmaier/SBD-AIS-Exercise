@@ -23,7 +23,7 @@ services:
       - "80:80"        # HTTP
       - "8080:8080"    # Dashboard: http://localhost:8080
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro # so that traefik can find other containers
     networks:
       - web
     restart: unless-stopped
@@ -64,8 +64,8 @@ services:
       - traefik.enable=true
       - traefik.docker.network=web
       - traefik.http.routers.orderservice.rule=Host(`orders.localhost`)
-      - traefik.http.routers.orderservice.entrypoints=web
-      - traefik.http.services.orderservice.loadbalancer.server.port=3000
+      - traefik.http.routers.orderservice.entrypoints=web 
+      - traefik.http.services.orderservice.loadbalancer.server.port=3000 # port where the app listens inside the container
     restart: unless-stopped
 
   sws:

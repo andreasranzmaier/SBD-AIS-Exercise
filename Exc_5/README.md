@@ -25,3 +25,5 @@ The orderservice uses the port 3000, keep in mind when setting up its traefik la
 The static web server can be [configured via environment variables](https://static-web-server.net/configuration/environment-variables/),
 to expose port 80 and serve the frontend folder.
 
+**Beware to rebuild your Docker image, as the source code has changed!**
+

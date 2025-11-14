@@ -29,21 +29,25 @@ services:
     restart: unless-stopped
 
   order-postgres:
-    image: postgres:16
+    image: postgres:latest
+    restart: always
+    networks:
+      - intercom
+    volumes:
+      - order_pg_vol:/var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=order
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
-    networks:
-      - intercom
-    volumes:
-      - order_pg_vol:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U docker -d order -h 127.0.0.1 -p 5432"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    restart: unless-stopped
+      - POSTGRES_TCP_PORT=5432
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.frontend.rule=Host(`localhost`)
+      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.services.frontend.loadbalancer.server.port=80
 
   orderservice:
     build: .
@@ -79,10 +83,4 @@ services:
       # - SPA=true
     networks:
       - web
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=web
-      - traefik.http.routers.frontend.rule=Host(`localhost`)
-      - traefik.http.routers.frontend.entrypoints=web
-      - traefik.http.services.frontend.loadbalancer.server.port=80
-    restart: unless-stopped
+      

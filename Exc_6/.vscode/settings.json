@@ -1,0 +1,8 @@
+{
+    "minio.url": "127.0.0.1",
+    "minio.port": 8500,
+    "minio.accessKey": "root",
+    "minio.secretKey": "verysecret",
+    "minio.secure": false,
+    "minio.apiVersion": "s3v4"
+}

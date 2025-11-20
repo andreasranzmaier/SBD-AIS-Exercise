@@ -6,11 +6,14 @@ import (
 )
 
 const (
-	orderFilename = "order_%d.md"
+	orderFilename    = "order_%d.md"
+	markdownTemplate = `# Order: %d
 
-	// todo create markdown emplate, fields should be able to be populated with fmt.Sprintf
-	markdownTemplate = `
+| Created At      | Drink ID | Amount |
+|-----------------|----------|--------|
+| %s | %d        | %d      |
 
+Thanks for drinking with us!
 `
 )
 
@@ -29,4 +32,9 @@ func (o *Order) ToMarkdown() string {
 
 func (o *Order) GetFilename() string {
 	return fmt.Sprintf(orderFilename, o.ID)
+}
+
+// Filename kept for compatibility with comments in rest/api.go
+func (o *Order) Filename() string {
+	return o.GetFilename()
 }

@@ -1,6 +1,7 @@
 FROM golang:1.25 AS builder
 WORKDIR /app
-COPY .. .
+COPY . .
+RUN go mod download
 RUN sh /app/scripts/build-application.sh
 
 FROM alpine AS run

@@ -27,61 +27,77 @@ services:
     image: traefik:v3.6.1
     command:
       - --api.dashboard=true
-      - --api.insecure=false
+      - --api.insecure=true
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
       - --providers.swarm.exposedbydefault=false
       - --providers.swarm.network=web
       - --entrypoints.web.address=:80
-      - --log.level=INFO
     ports:
       - target: 80
         published: 80
         protocol: tcp
-        mode: ingress
+      - target: 8080
+        published: 8080
+        protocol: tcp
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro  # Traefik reads Swarm API
     networks:
       - web
     deploy:
-      # todo
-      # Replicate only to manager
-      # expose dashboard to localhost/dashboard
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.dashboard.rule=Host(`localhost`)"
+        - "traefik.http.routers.dashboard.service=api@internal"
+        - "traefik.http.routers.dashboard.entrypoints=web"
+        - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
 
 
   frontend:
-    image: ghcr.io/ddibiasi/sbd-ais-exercise/frontend:1.0
+    image: frontend:local
     networks:
       - web
     deploy:
-      # todo deploy globally
-      # should be available at http://localhost from every node
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"
+        - "traefik.http.services.frontend.loadbalancer.server.port=80"
+        - "traefik.http.routers.frontend.entrypoints=web"
 
 
   orderservice:
-    image: ghcr.io/ddibiasi/sbd-ais-exercise/orderservice:1.0
+    image: orderservice:local
     command: [ "/app/ordersystem" ]
     depends_on:
       - postgres
       - minio
     secrets:
-      # todo use secrets
+      - postgres_user
+      - postgres_password
+      - s3_user
+      - s3_password
     environment:
       - POSTGRES_DB=order
-      - PGPORT=5555
+      - PGPORT=5432
       - DB_HOST=postgres
       - S3_ENDPOINT=minio:8500
-      # todo use secrets
-      - S3_ACCESS_KEY_ID_FILE=
-      - S3_SECRET_ACCESS_KEY_FILE=
-      - POSTGRES_USER_FILE=
-      - POSTGRES_PASSWORD_FILE=
+      - S3_ACCESS_KEY_ID_FILE=/run/secrets/s3_user
+      - S3_SECRET_ACCESS_KEY_FILE=/run/secrets/s3_password
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
     networks:
       - web
       - intercom
     deploy:
-      # todo deploy global
-      # Should be reachable at http://orders.localhost
-      # always restart container on failure
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.orderservice.rule=Host(`orders.localhost`)"
+        - "traefik.http.services.orderservice.loadbalancer.server.port=3000"
+        - "traefik.http.routers.orderservice.entrypoints=web"
       restart_policy:
         condition: any
         delay: 5s
@@ -94,16 +110,12 @@ services:
     networks:
       - intercom
     secrets:
-      # todo use secrets
+      - postgres_user
+      - postgres_password
     environment:
       - POSTGRES_DB=order
-      - PGPORT=5555
-      # todo use secrets
-      - POSTGRES_USER_FILE=
-      - POSTGRES_PASSWORD_FILE=
-    deploy:
-      # todo replicate only to one worker node
-      # todo use constraints
+      - POSTGRES_USER_FILE=/run/secrets/postgres_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
 
   minio:
     image: minio/minio:latest
@@ -111,13 +123,10 @@ services:
     volumes:
       - minio_vol:/data
     secrets:
-      # todo use secrets
+      - s3_user
+      - s3_password
     environment:
-      # todo use secrets
-      - MINIO_ROOT_USER_FILE=
-      - MINIO_ROOT_PASSWORD_FILE=
+      - MINIO_ROOT_USER_FILE=/run/secrets/s3_user
+      - MINIO_ROOT_PASSWORD_FILE=/run/secrets/s3_password
     networks:
       - intercom
-    deploy:
-      # todo replicate only to one worker node
-      # todo use constraints

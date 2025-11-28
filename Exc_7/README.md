@@ -83,3 +83,6 @@ deploy:
 ## Windows Struggles
 If you can't ping each other, your Windows is probably blocking ICMP Echo Requests. 
 Have a look here: https://superuser.com/questions/1683853/cannot-ping-a-windows-11-machine
+
+If nothing works on Windows, [install Ubuntu in a VM](https://ubuntu.com/tutorials/how-to-run-ubuntu-desktop-on-a-virtual-machine-using-virtualbox#1-overview), give the VM access to the hosts networks 
+and install Docker. 

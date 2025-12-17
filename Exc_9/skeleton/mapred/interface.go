@@ -1,7 +1,7 @@
 package mapred
 
 type MapReduceInterface interface {
-	Run(input []string) []KeyValue
+	RunMapreduce(input []string) map[string]int
 	wordCountMapper(text string) []KeyValue
 	wordCountReducer(key string, values []int) KeyValue
 }

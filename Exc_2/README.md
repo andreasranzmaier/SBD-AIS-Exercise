@@ -20,7 +20,7 @@ A scaffold is provided to get you started in the `skeleton/` folder.
 You need to complete the webservice by resolving all comments including a `todo` keyword.
 
 Once you've created your REST routes, execute the `build-openapi-docs.sh` script to create an OpenAPI compatible
-REST documentation.
+REST documentatiown.
 
 ## Model Definitions
 ```

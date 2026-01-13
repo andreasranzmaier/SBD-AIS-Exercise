@@ -14,10 +14,6 @@ set +a
 
 docker network create ordersys-net >/dev/null 2>&1 || true
 
-exists_container() { docker ps -a --format '{{.Names}}' | grep -q "^${1}\$"; }
-rm_if_exists() { exists_container "$1" && docker rm -f "$1" >/dev/null || true; }
-
-rm_if_exists "$CONTAINER_DB"
 docker volume rm "$VOLUME_DB" >/dev/null 2>&1 || true
 docker volume create "$VOLUME_DB" >/dev/null
 
@@ -34,7 +30,6 @@ docker run -d \
 
 until docker exec "$CONTAINER_DB" pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; do sleep 1; done
 
-rm_if_exists "$CONTAINER_APP"
 docker build -t "$IMAGE_APP" -f Dockerfile . >/dev/null
 
 docker run -d \

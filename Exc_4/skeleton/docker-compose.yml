@@ -1,47 +1,39 @@
-# docker-compose.yml
-version: "3.9"
-
 services:
-  # Postgres Database Service
   postgres:
-    image: postgres:18
+    image: postgres:17
     restart: unless-stopped
     ports:
       - "5432:5432"
     env_file:
       - ./debug.env
-    volumes:
-      - pgdata:/var/lib/postgresql/data # Persist database data
-    # get the env vars from debug.env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U docker -d order"]
-      interval: 2s
-      timeout: 5s
-      retries: 5
+      PGDATA: /var/lib/postgresql/18/docker # in container 
+    volumes:
+      - pgdata:/var/lib/postgresql/18/docker   # <— mount at the parent that definitely exists to get it to host
     networks:
       - ordersys-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Order System Service
   ordersystem:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
       postgres:
-        condition: service_healthy # Ensure Postgres is healthy before starting
+        condition: service_healthy
     restart: unless-stopped
     env_file:
       - ./debug.env
     ports:
       - "3000:3000"
-    command: ["/app/ordersystem"]
+    command: ["/ordersystem"]
     networks:
       - ordersys-net
 
-# Define networks and volumes
 networks:
   ordersys-net:
 

@@ -60,7 +60,7 @@ services:
     image: postgres:18
     volumes:
       - order_pg_vol:/var/lib/postgresql
-    restart: always
+    restart: unless-stopped
     networks:
       - intercom
     ports:

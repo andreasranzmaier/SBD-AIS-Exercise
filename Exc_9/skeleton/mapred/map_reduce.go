@@ -12,7 +12,7 @@ type MapReduce struct {
 // Run executes the map and reduce phases concurrently and returns word counts.
 func (mr MapReduce) Run(input []string) map[string]int {
 	var mapWG sync.WaitGroup
-	// channel carries mapper outputs back to the collector
+	// channel carries mapper outputs bqack to the collector
 	mapped := make(chan []KeyValue)
 
 	for _, text := range input {
